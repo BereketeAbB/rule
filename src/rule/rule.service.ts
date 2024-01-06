@@ -85,11 +85,10 @@ export class RuleService {
         const treeActions = actions
         for (let i = actions.length; i > 0; i--) {
             if (i == actions.length) {
-                treeActions[i - 1]['nextAction'] = null
+                treeActions[i - 1]['nextAction'] = undefined
                 treeActions[i - 1] = this.repositoryAction.create(treeActions[i - 1])
             }
             else {
-                // treeActions[i - 1]['nextAction'] = []
                 treeActions[i - 1] = this.repositoryAction.create(treeActions[i - 1])
                 treeActions[i - 1]['nextAction'] = treeActions[i]
             }
@@ -108,12 +107,10 @@ export class RuleService {
 
             for (let i = ands.length; i > 0; i--) {
                 if (i === ands.length) {
-                    treeAndConditions[i - 1]['nextAndCondition'] = []
                     treeAndConditions[i - 1] = this.repositoryCondition.create(treeAndConditions[i - 1]);
                 } else {
-                    treeAndConditions[i - 1]['nextAndCondition'] = []
                     treeAndConditions[i - 1] = this.repositoryCondition.create(treeAndConditions[i - 1]);
-                    treeAndConditions[i - 1]['nextAndCondition'][0] = treeAndConditions[i];
+                    treeAndConditions[i - 1]['nextAndCondition'] = treeAndConditions[i];
                 }
             }
 
@@ -124,18 +121,17 @@ export class RuleService {
             parentAndConditions.push(savedConditions.id);
         }
 
-
         const orConditionObj = this.createNestedOrStructure(parentAndConditions, parentActionId)
 
-        // const createdOrConditions = this.repositoryOrCondition.create(orConditionObj[0])
-        const savedOrConditions = await this.repositoryOrCondition.save(orConditionObj[0])
+        const createdOrConditions = this.repositoryOrCondition.create(orConditionObj)
+        const savedOrConditions = await this.repositoryOrCondition.save(createdOrConditions)
         return savedOrConditions
     }
 
 
-    createNestedOrStructure(uuids: string[], parentActionId): OrCondition[] | undefined {
+    createNestedOrStructure(uuids: string[], parentActionId): OrCondition | undefined {
         if (uuids.length === 0) {
-            return [];
+            return undefined;
         }
         const [firstUuid, ...restUuids] = uuids;
 
@@ -143,10 +139,9 @@ export class RuleService {
             parentAndConditionId: firstUuid,
             actionId: parentActionId,
             nextParentAndCondition: this.createNestedOrStructure(restUuids, parentActionId),
-            // nextParentAndCondition[0]: this.createNestedOrStructure(restUuids, parentActionId),
         };
 
-        const createdNestedStructure = this.repositoryOrCondition.create(nestedStructure)
-        return [createdNestedStructure];
+
+        return nestedStructure;
     }
 }

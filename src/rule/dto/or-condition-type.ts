@@ -14,8 +14,3 @@ export class OrConditionType {
     nextParent?: OrConditionType
 
 }
-
-export type NestedCondition = {
-    parentCondition: string;
-    nextParent?: NestedCondition[];
-};

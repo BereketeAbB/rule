@@ -1,10 +1,10 @@
-import { Entity, Column, Tree, OneToOne, PrimaryColumn, JoinColumn, PrimaryGeneratedColumn, OneToMany, TreeChildren, TreeParent } from 'typeorm';
+import { Entity, Column, Tree, OneToOne, PrimaryColumn, JoinColumn, PrimaryGeneratedColumn } from 'typeorm';
 // import { AndCondition } from './and-conditions.entity';
 import { Action } from './action.entity';
 import { Condition } from './conditions.entity';
 
 @Entity({ name: 'or_conditions' })
-@Tree('closure-table')
+// @Tree("nested-set")
 export class OrCondition {
     @PrimaryGeneratedColumn('uuid')
     id?: string;
@@ -15,22 +15,18 @@ export class OrCondition {
     // @OneToOne(() => Condition, (condition) => condition.id, { nullable: true })
     // parentAndCondition: Condition
 
-    // @Column({ nullable: true })
-    // nextParentAndConditionId?: string
+    @Column({ nullable: true })
+    nextParentAndConditionId?: string
 
-    @OneToMany(() => OrCondition, (orCondition) => orCondition.currentParentAndCondition, { eager: true, nullable: true, cascade: ['insert'] })
-    // @JoinColumn()
-    @TreeChildren()
-    nextParentAndCondition?: OrCondition[]
-
-    @OneToMany(() => OrCondition, (orCondition) => orCondition.nextParentAndCondition, { nullable: true })
-    @TreeParent()
+    @OneToOne(() => OrCondition, (orCondition) => orCondition.currentParentAndCondition, { eager: true, cascade: ['insert'] })
     @JoinColumn()
+    nextParentAndCondition?: OrCondition
+
+    @OneToOne(() => OrCondition, (orCondition) => orCondition.nextParentAndCondition)
     currentParentAndCondition?: OrCondition
 
     @Column({ nullable: true })
     actionId: string
-
 
     // @OneToOne(() => Action, (action) => action.id, { nullable: true })
     // action: Action
