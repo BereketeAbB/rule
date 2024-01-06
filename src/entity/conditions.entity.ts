@@ -1,8 +1,8 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany, TreeRepository, Tree, TreeChildren, JoinColumn, OneToOne } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany, TreeRepository, Tree, TreeChildren, JoinColumn, OneToOne, ManyToOne, TreeParent } from 'typeorm';
 // import { AndCondition } from './and-conditions.entity';
 
 @Entity({ name: 'conditions' })
-// @Tree('adjacency-list')
+@Tree('closure-table')
 export class Condition {
     @PrimaryGeneratedColumn('uuid')
     id: string;
@@ -16,16 +16,16 @@ export class Condition {
     @Column()
     value: string
 
-    @Column({ nullable: true })
-    nextAndConditionId: string
+    // @Column({ nullable: true })
+    // nextAndConditionId: string
 
-    @OneToOne(() => Condition, (condition) => condition.currentAndCondition, { cascade: ['insert'], nullable: true })
-    // @TreeChildren()
+    @OneToMany(() => Condition, (condition) => condition.currentAndCondition, { cascade: ['insert'], nullable: true })
+    @TreeChildren()
+    nextAndCondition: Condition[]
+
+    @TreeParent()
+    @OneToMany(() => Condition, (condition) => condition.nextAndCondition, { nullable: true, cascade: ['insert'] })
     @JoinColumn()
-    nextAndCondition: Condition
-
-    @OneToOne(() => Condition, { nullable: true })
-    // @TreeChildren()
     currentAndCondition: Condition
 }
 

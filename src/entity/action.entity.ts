@@ -1,7 +1,7 @@
-import { Entity, Column, Tree, OneToOne, PrimaryColumn, PrimaryGeneratedColumn, TreeChildren, JoinColumn } from 'typeorm';
+import { Entity, Column, Tree, OneToOne, PrimaryColumn, PrimaryGeneratedColumn, JoinColumn, TreeChildren, OneToMany, TreeParent } from 'typeorm';
 
 @Entity({ name: 'actions' })
-// @Tree('adjacency-list')
+@Tree('closure-table')
 export class Action {
     @PrimaryGeneratedColumn('uuid')
     // @Column()
@@ -16,14 +16,25 @@ export class Action {
     @Column()
     value: string
 
-    @Column({ nullable: true, type: 'uuid' })
-    nextActionId: string
+    // @Column({ nullable: true, type: 'uuid' })
+    // nextActionId: string
 
-    // @TreeChildren()
-    @OneToOne(() => Action, action => action.currentAction, { cascade: ['insert'] })
-    @JoinColumn()
+
+    @OneToOne(() => Action, action => action.currentParentAction, { cascade: ['insert'], nullable: true, eager: true })
+    @TreeChildren()
     nextAction: Action
 
-    @OneToOne(() => Action, action => action.nextAction, { eager: true, cascade: ['insert'] })
-    currentAction: Action
+    @OneToOne(() => Action, action => action.nextAction, { nullable: true, cascade: ['insert'] })
+    @JoinColumn()
+    @TreeParent()
+    currentParentAction: Action
 }
+//     @OneToMany(() => Action, action => action.currentParentAction, { cascade: ['insert'], nullable: true, eager: true })
+//     @TreeChildren()
+//     nextAction: Action[]
+
+//     @OneToOne(() => Action, action => action.nextAction, { nullable: true, cascade: ['insert'] })
+//     @JoinColumn()
+//     @TreeParent()
+//     currentParentAction: Action
+// }
