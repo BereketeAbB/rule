@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany, TreeRepository, Tree, TreeChildren, JoinColumn, OneToOne } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany, TreeRepository, Tree, TreeChildren, JoinColumn, OneToOne, ManyToOne } from 'typeorm';
+import { Action } from './action.entity';
 // import { AndCondition } from './and-conditions.entity';
 
 @Entity({ name: 'conditions' })
@@ -27,6 +28,24 @@ export class Condition {
     @OneToOne(() => Condition, { nullable: true })
     // @TreeChildren()
     currentAndCondition: Condition
+
+    @Column({ nullable: true })
+    parentActionId: string
+
+    @ManyToOne(() => Action, action => action.parentAndCondition)
+    @JoinColumn()
+    parentAction: Action
+
+    @Column()
+    actionGroup: string
+
+
+    @OneToMany(() => Action, action => action.grp)
+    actGrp: Action[]
+
+    // @ManyToOne(() => Action, action => action.parentAndCondition)
+    // @JoinColumn()
+    // parentAction: Action
 }
 
 

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CreateRuleDTO } from './dto/create-rule.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Condition } from 'src/entity/conditions.entity';
@@ -20,12 +20,12 @@ const psedoRequest = {
                     {
                         name: "name",
                         operator: "=",
-                        value: "ammanuel"
+                        value: "yonass"
                     },
                     {
-                        name: "name",
+                        name: "firstname",
                         operator: "=",
-                        value: "Sami"
+                        value: "SamiGo"
                     }
                 ],
                 [
@@ -56,6 +56,11 @@ const psedoRequest = {
     }
 }
 
+const psedoUser = {
+    name: "Sami",
+    age: 45
+}
+
 @Injectable()
 export class RuleService {
 
@@ -69,26 +74,64 @@ export class RuleService {
         return await this.decodeCreateRuleDto()
     }
 
-
-    async getConditions() {
-        return await this.repositoryCondition.find({
-            where: { id: 'ff0b7f95-3145-4228-b4f4-816c61c69cf1' },
-            relations: ['nextAndCondition', 'nextAndCondition.nextAndCondition']
-        })
+    async filterUser(orCondition: Condition[][]) {
+        for (const andCondition of orCondition) {
+            const action = await this.repositoryAction.findOne({ where: { id: andCondition[0].parentActionId } })
+            console.log(action)
+        }
     }
 
+    async getConditions() {
+        const allConditions = await this.repositoryCondition.find({})
+
+        const filteredCondition = allConditions.filter((cond) => cond.name == 'age' && cond.value == '23')
+        const orConditions: Condition[][] = []
+        for (const checkCondition of filteredCondition) {
+            const family: Condition[] = this.getParentNdChild(checkCondition, allConditions)
+            console.log(family)
+            orConditions.push([...family])
+
+        }
+        return orConditions;
+    }
+
+    private getParentNdChild(condition: Condition, conditionsArray: Condition[]): Condition[] {
+        const p = this.getParents(condition, conditionsArray, [])
+        p.push(condition)
+        const c = this.getChildren(condition, conditionsArray, p)
+        return c
+    }
+
+    private getParents(condition: Condition, conditionsArray: Condition[], line: Condition[]): Condition[] {
+        const parent = conditionsArray.find((cond) => cond.nextAndConditionId == condition.id)
+        if (!parent) return [];
+        this.getParents(parent, conditionsArray, line)
+        line.push(parent)
+        return line
+    }
+
+    private getChildren(condition: Condition, conditionsArray: Condition[], line: Condition[]): Condition[] {
+        const child = conditionsArray.find((cond) => cond.id == condition.nextAndConditionId)
+        if (!child) return line;
+        this.getChildren(child, conditionsArray, line)
+        line.push(child)
+        return line
+    }
 
     private async decodeCreateRuleDto() {
         const createRuleDto = psedoRequest
 
         const actions = createRuleDto.rule.action
         const treeActions = actions
+        const actionGroup = Math.floor(Math.random() * 10000) + 1;
         for (let i = actions.length; i > 0; i--) {
             if (i == actions.length) {
                 treeActions[i - 1]['nextAction'] = undefined
+                treeActions[i - 1]['group'] = actionGroup
                 treeActions[i - 1] = this.repositoryAction.create(treeActions[i - 1])
             }
             else {
+                treeActions[i - 1]['group'] = actionGroup
                 treeActions[i - 1] = this.repositoryAction.create(treeActions[i - 1])
                 treeActions[i - 1]['nextAction'] = treeActions[i]
             }
@@ -114,9 +157,9 @@ export class RuleService {
                 }
             }
 
+            treeAndConditions[0]['parentActionId'] = parentActionId
+            treeAndConditions[0]['actionGroup'] = actionGroup
             const savedConditions = await this.repositoryCondition.save(treeAndConditions[0]);
-
-            console.log(savedConditions);
 
             parentAndConditions.push(savedConditions.id);
         }
@@ -128,8 +171,7 @@ export class RuleService {
         return savedOrConditions
     }
 
-
-    createNestedOrStructure(uuids: string[], parentActionId): OrCondition | undefined {
+    private createNestedOrStructure(uuids: string[], parentActionId): OrCondition | undefined {
         if (uuids.length === 0) {
             return undefined;
         }
@@ -143,5 +185,9 @@ export class RuleService {
 
 
         return nestedStructure;
+    }
+
+    private notify(text: string) {
+        Logger.log("Notification: " + text)
     }
 }

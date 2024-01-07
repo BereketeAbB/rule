@@ -1,4 +1,4 @@
-import { Entity, Column, Tree, OneToOne, PrimaryColumn, JoinColumn, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, Tree, OneToOne, PrimaryColumn, JoinColumn, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
 // import { AndCondition } from './and-conditions.entity';
 import { Action } from './action.entity';
 import { Condition } from './conditions.entity';
@@ -28,7 +28,7 @@ export class OrCondition {
     @Column({ nullable: true })
     actionId: string
 
-    // @OneToOne(() => Action, (action) => action.id, { nullable: true })
+    // @ManyToOne(() => Action, (action) => action.id, { nullable: true })
     // action: Action
 }
 // import { Entity, Column, Tree, OneToOne } from 'typeorm';

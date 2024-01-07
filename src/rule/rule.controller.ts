@@ -15,5 +15,9 @@ export class RuleController {
     async getConditions() {
         return await this.ruleService.getConditions()
     }
+    @Post('filter')
+    async filterConditions(@Body() orCondition: any) {
+        return await this.ruleService.filterUser(orCondition.orConditions)
+    }
 
 }
