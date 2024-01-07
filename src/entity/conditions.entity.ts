@@ -36,12 +36,12 @@ export class Condition {
     @JoinColumn()
     parentAction: Action
 
-    @Column()
+    @Column({ nullable: true })
     actionGroup: string
 
 
-    @OneToMany(() => Action, action => action.grp)
-    actGrp: Action[]
+    // @OneToMany(() => Action, action => action.grp)
+    // actGrp: Action[]
 
     // @ManyToOne(() => Action, action => action.parentAndCondition)
     // @JoinColumn()

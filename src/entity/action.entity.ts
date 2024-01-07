@@ -34,7 +34,7 @@ export class Action {
     @Column()
     group: string
 
-    @ManyToOne(() => Condition, condition => condition.actGrp)
-    @JoinColumn()
-    grp: Condition[]
+    // @ManyToOne(() => Condition, condition => condition.actGrp)
+    // @JoinColumn()
+    // grp: Condition[]
 }

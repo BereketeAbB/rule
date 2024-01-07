@@ -14,25 +14,20 @@ const psedoRequest = {
                 [
                     {
                         name: "age",
-                        operator: ">",
+                        operator: "=",
                         value: "23"
                     },
                     {
                         name: "name",
                         operator: "=",
-                        value: "yonass"
-                    },
-                    {
-                        name: "firstname",
-                        operator: "=",
-                        value: "SamiGo"
+                        value: "sami"
                     }
                 ],
                 [
                     {
-                        name: "name",
+                        name: "gender",
                         operator: "=",
-                        value: "yonas"
+                        value: "male"
                     }
                 ]
             ],
@@ -40,25 +35,21 @@ const psedoRequest = {
             {
                 name: "notify",
                 operator: "=",
-                value: "ammanuel"
+                value: "Please Call Me As Soon As Poosible"
             },
             {
                 name: "set",
                 operator: "=",
-                value: "A"
-            },
-            {
-                name: "welcome",
-                operator: "=",
-                value: "Wellcomeee"
+                value: "C"
             }
         ]
     }
 }
 
 const psedoUser = {
-    name: "Sami",
-    age: 45
+    name: "sami",
+    age: 23,
+    gender: 'male'
 }
 
 @Injectable()
@@ -74,17 +65,53 @@ export class RuleService {
         return await this.decodeCreateRuleDto()
     }
 
-    async filterUser(orCondition: Condition[][]) {
-        for (const andCondition of orCondition) {
-            const action = await this.repositoryAction.findOne({ where: { id: andCondition[0].parentActionId } })
-            console.log(action)
+    async generateFilterFromUser() {
+
+        for (const key in psedoUser) {
+            const orConds: Condition[][] = await this.getConditions(key, psedoUser[key])
+            this.filterUser(orConds)
         }
     }
 
-    async getConditions() {
+    async filterUser(orCondition: Condition[][]) {
+        let takeAction = false
+        for (const andCondition of orCondition) {
+            for (const check of andCondition) {
+                if (psedoUser[check['name']] && psedoUser[check['name']] == check['value']) {
+                    takeAction = true
+                } else {
+                    takeAction = false
+                    break
+                }
+            }
+            if (takeAction) break
+        }
+
+        if (takeAction) {
+            const action = await this.repositoryAction.findOne({ where: { id: orCondition[0][0].parentActionId } })
+            const actionGroup = await this.repositoryAction.find({ where: { group: action.group } })
+
+            this.takeAction(psedoUser, actionGroup)
+        } else {
+            Logger.warn("User doesnt match any conditions")
+        }
+    }
+
+    private async takeAction(user: any, actions: Action[]) {
+        for (const action of actions) {
+            if (action.name == 'notify') {
+                this.notify(action.value)
+            } else if (action.name == 'set') {
+                psedoUser['class'] = action.value
+                console.log({ psedoUser })
+            }
+        }
+    }
+
+    async getConditions(name: string, value: any) {
         const allConditions = await this.repositoryCondition.find({})
 
-        const filteredCondition = allConditions.filter((cond) => cond.name == 'age' && cond.value == '23')
+        const filteredCondition = allConditions.filter((cond) => cond.name == name && cond.value == value)
         const orConditions: Condition[][] = []
         for (const checkCondition of filteredCondition) {
             const family: Condition[] = this.getParentNdChild(checkCondition, allConditions)
@@ -123,6 +150,7 @@ export class RuleService {
 
         const actions = createRuleDto.rule.action
         const treeActions = actions
+
         const actionGroup = Math.floor(Math.random() * 10000) + 1;
         for (let i = actions.length; i > 0; i--) {
             if (i == actions.length) {
@@ -132,8 +160,8 @@ export class RuleService {
             }
             else {
                 treeActions[i - 1]['group'] = actionGroup
-                treeActions[i - 1] = this.repositoryAction.create(treeActions[i - 1])
                 treeActions[i - 1]['nextAction'] = treeActions[i]
+                treeActions[i - 1] = this.repositoryAction.create(treeActions[i - 1])
             }
         }
 
@@ -149,16 +177,18 @@ export class RuleService {
             const treeAndConditions = ands;
 
             for (let i = ands.length; i > 0; i--) {
-                if (i === ands.length) {
-                    treeAndConditions[i - 1] = this.repositoryCondition.create(treeAndConditions[i - 1]);
-                } else {
-                    treeAndConditions[i - 1] = this.repositoryCondition.create(treeAndConditions[i - 1]);
+                if (i == 1) {
+                    treeAndConditions[i - 1]['parentActionId'] = parentActionId
+                    treeAndConditions[i - 1]['actionGroup'] = actionGroup
                     treeAndConditions[i - 1]['nextAndCondition'] = treeAndConditions[i];
+                    treeAndConditions[i - 1] = this.repositoryCondition.create(treeAndConditions[i - 1]);
+                }
+                else {
+                    treeAndConditions[i - 1]['nextAndCondition'] = treeAndConditions[i];
+                    treeAndConditions[i - 1] = this.repositoryCondition.create(treeAndConditions[i - 1]);
                 }
             }
 
-            treeAndConditions[0]['parentActionId'] = parentActionId
-            treeAndConditions[0]['actionGroup'] = actionGroup
             const savedConditions = await this.repositoryCondition.save(treeAndConditions[0]);
 
             parentAndConditions.push(savedConditions.id);
@@ -188,6 +218,6 @@ export class RuleService {
     }
 
     private notify(text: string) {
-        Logger.log("Notification: " + text)
+        Logger.warn("Notification: " + text)
     }
 }
